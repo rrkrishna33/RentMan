@@ -89,9 +89,9 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "MrinayaIcon.jpeg"
-  adaptive_icon_background: "#0D47A1"
-  adaptive_icon_foreground: "MrinayaIcon.jpeg"
+  image_path: "assets/icon/gellsoft_logo.jpg"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icon/gellsoft_logo.jpg"
   remove_alpha_ios: true
 
 # For information on the generic Dart part of this file, see the
