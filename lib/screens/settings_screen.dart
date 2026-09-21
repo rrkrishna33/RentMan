@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import '../services/booking_provider.dart';
 import '../services/settings_service.dart';
 import '../theme/app_theme.dart';
 
@@ -44,6 +45,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _gstController.dispose();
     _categoryController.dispose();
     super.dispose();
+  }
+
+  Future<void> _updatePendingOrderAlertSettings({
+    required bool enabled,
+    required int intervalHours,
+    required int startDaysBefore,
+  }) async {
+    final settings = context.read<SettingsService>();
+    await settings.updatePendingOrderAlertSettings(
+      enabled: enabled,
+      intervalHours: intervalHours,
+      startDaysBefore: startDaysBefore,
+    );
+    if (!mounted) return;
+    await context.read<BookingProvider>().syncAllPendingOrderAlerts(settings);
   }
 
   Future<void> _saveCompanyProfile() async {
@@ -294,15 +310,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             subtitle: const Text('Keep notifying until the order is marked dispatched'),
                             value: settings.pendingOrderAlertsEnabled,
                             activeColor: AppTheme.primary,
-                            onChanged: (value) async {
-                              await context.read<SettingsService>().updatePendingOrderAlertSettings(
-                                    enabled: value,
-                                    intervalHours: settings.pendingOrderAlertIntervalHours,
-                                  );
-                            },
+                            onChanged: (value) => _updatePendingOrderAlertSettings(
+                              enabled: value,
+                              intervalHours: settings.pendingOrderAlertIntervalHours,
+                              startDaysBefore: settings.pendingOrderAlertStartDaysBefore,
+                            ),
                           ),
                           if (settings.pendingOrderAlertsEnabled) ...[
                             const SizedBox(height: 8),
+                            const Text('Start alerting', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [0, 1, 2, 3, 5, 7].map((days) {
+                                final selected = settings.pendingOrderAlertStartDaysBefore == days;
+                                return ChoiceChip(
+                                  label: Text(days == 0 ? 'At booking' : '$days day${days > 1 ? 's' : ''} before'),
+                                  selected: selected,
+                                  onSelected: (_) => _updatePendingOrderAlertSettings(
+                                    enabled: settings.pendingOrderAlertsEnabled,
+                                    intervalHours: settings.pendingOrderAlertIntervalHours,
+                                    startDaysBefore: days,
+                                  ),
+                                  selectedColor: AppTheme.primary,
+                                  labelStyle: TextStyle(
+                                    color: selected ? Colors.white : Colors.black87,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  backgroundColor: Colors.white,
+                                  side: BorderSide.none,
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 12),
                             const Text('Repeat every', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
                             const SizedBox(height: 8),
                             Wrap(
@@ -313,12 +354,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 return ChoiceChip(
                                   label: Text('$hours hour${hours > 1 ? 's' : ''}'),
                                   selected: selected,
-                                  onSelected: (_) async {
-                                    await context.read<SettingsService>().updatePendingOrderAlertSettings(
-                                      enabled: settings.pendingOrderAlertsEnabled,
-                                      intervalHours: hours,
-                                    );
-                                  },
+                                  onSelected: (_) => _updatePendingOrderAlertSettings(
+                                    enabled: settings.pendingOrderAlertsEnabled,
+                                    intervalHours: hours,
+                                    startDaysBefore: settings.pendingOrderAlertStartDaysBefore,
+                                  ),
                                   selectedColor: AppTheme.primary,
                                   labelStyle: TextStyle(
                                     color: selected ? Colors.white : Colors.black87,
@@ -331,7 +371,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Note: a new interval only applies to bookings created or edited after the change. Existing alerts keep their previous interval until dispatched.',
+                              'Note: changes only apply to bookings still pending dispatch, and to those becoming due for their first alert. Once started, a booking keeps repeating until dispatched.',
                               style: TextStyle(color: Colors.grey[600], fontSize: 12),
                             ),
                             const SizedBox(height: 12),

@@ -111,6 +111,10 @@ class _AppGateState extends State<AppGate> with WidgetsBindingObserver {
       if (settings.appLockEnabled) {
         setState(() => _unlocked = false);
       }
+    } else if (state == AppLifecycleState.resumed) {
+      // Bookings may have crossed into their alert window while backgrounded.
+      final settings = context.read<SettingsService>();
+      context.read<BookingProvider>().syncAllPendingOrderAlerts(settings);
     }
   }
 

@@ -13,6 +13,7 @@ class SettingsService extends ChangeNotifier {
   static const _appLockEnabledKey = 'app_lock_enabled';
   static const _pendingOrderAlertsEnabledKey = 'pending_order_alerts_enabled';
   static const _pendingOrderAlertIntervalHoursKey = 'pending_order_alert_interval_hours';
+  static const _pendingOrderAlertStartDaysBeforeKey = 'pending_order_alert_start_days_before';
 
   static const List<String> _defaultCategories = ['Furniture', 'Equipment', 'Electronics', 'Decor', 'Other'];
 
@@ -26,6 +27,9 @@ class SettingsService extends ChangeNotifier {
   bool appLockEnabled = false;
   bool pendingOrderAlertsEnabled = true;
   int pendingOrderAlertIntervalHours = 2;
+  // How many days before the rental date the repeating alert starts firing.
+  // 0 means it starts as soon as the booking is created.
+  int pendingOrderAlertStartDaysBefore = 2;
 
   bool _isLoaded = false;
   bool get isLoaded => _isLoaded;
@@ -42,6 +46,7 @@ class SettingsService extends ChangeNotifier {
     appLockEnabled = prefs.getBool(_appLockEnabledKey) ?? false;
     pendingOrderAlertsEnabled = prefs.getBool(_pendingOrderAlertsEnabledKey) ?? true;
     pendingOrderAlertIntervalHours = prefs.getInt(_pendingOrderAlertIntervalHoursKey) ?? 2;
+    pendingOrderAlertStartDaysBefore = prefs.getInt(_pendingOrderAlertStartDaysBeforeKey) ?? 2;
     _isLoaded = true;
     notifyListeners();
   }
@@ -106,12 +111,15 @@ class SettingsService extends ChangeNotifier {
   Future<void> updatePendingOrderAlertSettings({
     required bool enabled,
     required int intervalHours,
+    required int startDaysBefore,
   }) async {
     pendingOrderAlertsEnabled = enabled;
     pendingOrderAlertIntervalHours = intervalHours;
+    pendingOrderAlertStartDaysBefore = startDaysBefore;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_pendingOrderAlertsEnabledKey, enabled);
     await prefs.setInt(_pendingOrderAlertIntervalHoursKey, intervalHours);
+    await prefs.setInt(_pendingOrderAlertStartDaysBeforeKey, startDaysBefore);
     notifyListeners();
   }
 }

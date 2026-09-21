@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/booking_provider.dart';
-import '../services/notification_service.dart';
 import '../services/settings_service.dart';
 import '../models/booking.dart';
 import '../theme/app_theme.dart';
@@ -103,7 +102,6 @@ class _AddBookingScreenState extends State<AddBookingScreen> {
             items: _items,
             specialNotes: _notesController.text.isEmpty ? null : _notesController.text,
           );
-          await NotificationService.cancelPendingOrderAlert(bookingId);
         } else {
           bookingId = await provider.addBooking(
             customerId: _selectedCustomerId,
@@ -116,17 +114,9 @@ class _AddBookingScreenState extends State<AddBookingScreen> {
           );
         }
 
-        final deliveryStatus = provider.getDeliveryForBooking(bookingId)?.status ?? 'pending';
-        if (settings.pendingOrderAlertsEnabled && deliveryStatus == 'pending') {
-          final customer = provider.getCustomer(_selectedCustomerId);
-          final booking = provider.getBooking(bookingId);
-          if (customer != null && booking != null) {
-            await NotificationService.schedulePendingOrderAlert(
-              booking: booking,
-              customerName: customer.name,
-              intervalHours: settings.pendingOrderAlertIntervalHours,
-            );
-          }
+        final booking = provider.getBooking(bookingId);
+        if (booking != null) {
+          await provider.syncPendingOrderAlertForBooking(booking, settings);
         }
 
         if (!mounted) return;

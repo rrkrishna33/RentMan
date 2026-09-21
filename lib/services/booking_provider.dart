@@ -4,6 +4,7 @@ import '../models/booking.dart';
 import '../models/delivery.dart';
 import '../database/database_helper.dart';
 import 'notification_service.dart';
+import 'settings_service.dart';
 
 class BookingProvider extends ChangeNotifier {
   final DatabaseHelper _dbHelper = DatabaseHelper();
@@ -356,5 +357,38 @@ class BookingProvider extends ChangeNotifier {
   Future<void> markReminderAsSent(int reminderId) async {
     await _dbHelper.updateReminder(reminderId, true, 1);
     notifyListeners();
+  }
+
+  // Starts, stops or leaves alone the repeating pending-order alert for a
+  // single booking, based on its delivery status and how close it is to
+  // the rental date relative to settings.pendingOrderAlertStartDaysBefore.
+  Future<void> syncPendingOrderAlertForBooking(Booking booking, SettingsService settings) async {
+    if (booking.id == null) return;
+
+    final status = getDeliveryForBooking(booking.id)?.status ?? 'pending';
+    final withinAlertWindow = booking.daysUntilRental <= settings.pendingOrderAlertStartDaysBefore;
+
+    if (!settings.pendingOrderAlertsEnabled || status != 'pending' || !withinAlertWindow) {
+      await NotificationService.cancelPendingOrderAlert(booking.id!);
+      return;
+    }
+
+    final customer = getCustomer(booking.customerId);
+    if (customer == null) return;
+    await NotificationService.schedulePendingOrderAlert(
+      booking: booking,
+      customerName: customer.name,
+      intervalHours: settings.pendingOrderAlertIntervalHours,
+    );
+  }
+
+  // Re-evaluates the pending-order alert for every booking. Call this after
+  // loading data, on app resume and whenever the alert settings change, so
+  // that alerts start/stop as bookings cross the start-days-before threshold
+  // even while the app wasn't open to react to it directly.
+  Future<void> syncAllPendingOrderAlerts(SettingsService settings) async {
+    for (final booking in _bookings) {
+      await syncPendingOrderAlertForBooking(booking, settings);
+    }
   }
 }

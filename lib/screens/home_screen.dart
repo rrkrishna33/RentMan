@@ -26,9 +26,13 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     // Load data when app starts
-    Future.microtask(() {
+    Future.microtask(() async {
       if (!mounted) return;
-      context.read<BookingProvider>().loadAllData();
+      final provider = context.read<BookingProvider>();
+      await provider.loadAllData();
+      if (!mounted) return;
+      // Bookings may have crossed into their alert window while the app was closed.
+      await provider.syncAllPendingOrderAlerts(context.read<SettingsService>());
     });
   }
 
