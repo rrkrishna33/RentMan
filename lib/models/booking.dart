@@ -27,8 +27,14 @@ class Booking {
     required this.items,
   });
 
-  // Get days until rental date
-  int get daysUntilRental => rentalDate.difference(DateTime.now()).inDays;
+  // Get days until rental date, counting calendar days rather than
+  // elapsed hours so the result doesn't shift depending on the time of day.
+  int get daysUntilRental {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final rental = DateTime(rentalDate.year, rentalDate.month, rentalDate.day);
+    return rental.difference(today).inDays;
+  }
 
   // Check if reminder should be sent (5-10 days before)
   bool get shouldRemind => daysUntilRental > 0 && daysUntilRental <= 10;
