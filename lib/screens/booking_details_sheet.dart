@@ -62,7 +62,7 @@ class BookingDetailsSheet extends StatelessWidget {
               const SizedBox(height: 16),
               _DetailRow('Customer', customer?.name ?? 'Unknown'),
               if (customer != null) _DetailRow('Phone', customer.phone),
-              _DetailRow('Event Date', '${currentBooking.eventDate.day}/${currentBooking.eventDate.month}/${currentBooking.eventDate.year}'),
+              _DetailRow('Rental Date', '${currentBooking.rentalDate.day}/${currentBooking.rentalDate.month}/${currentBooking.rentalDate.year}'),
               if (currentBooking.specialNotes != null && currentBooking.specialNotes!.isNotEmpty)
                 _DetailRow('Notes', currentBooking.specialNotes!),
               const SizedBox(height: 8),

@@ -205,7 +205,7 @@ class DashboardTab extends StatelessWidget {
               // Upcoming Deliveries
               const _SectionHeader(
                 title: 'Upcoming Deliveries',
-                subtitle: 'Events in the next 5-10 days',
+                subtitle: 'Rentals in the next 5-10 days',
               ),
               const SizedBox(height: 12),
 
@@ -253,7 +253,7 @@ class DashboardTab extends StatelessWidget {
                                   ),
                                   alignment: Alignment.center,
                                   child: Text(
-                                    '${booking.daysUntilEvent}d',
+                                    '${booking.daysUntilRental}d',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
@@ -272,7 +272,7 @@ class DashboardTab extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        '${booking.items.length} items · Event ${booking.eventDate.day}/${booking.eventDate.month}',
+                                        '${booking.items.length} items · Rental ${booking.rentalDate.day}/${booking.rentalDate.month}',
                                         style: TextStyle(color: Colors.grey[600], fontSize: 13),
                                       ),
                                     ],
@@ -347,7 +347,7 @@ class DashboardTab extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        'Event ${booking.eventDate.day}/${booking.eventDate.month}',
+                                        'Rental ${booking.rentalDate.day}/${booking.rentalDate.month}',
                                         style: TextStyle(color: Colors.grey[600], fontSize: 13),
                                       ),
                                     ],

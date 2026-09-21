@@ -125,7 +125,7 @@ class BookingProvider extends ChangeNotifier {
   // Add booking. Returns the newly created booking's id.
   Future<int> addBooking({
     required int customerId,
-    required DateTime eventDate,
+    required DateTime rentalDate,
     required double totalAmount,
     required double depositAmount,
     required double paidAmount,
@@ -134,7 +134,7 @@ class BookingProvider extends ChangeNotifier {
   }) async {
     final booking = Booking(
       customerId: customerId,
-      eventDate: eventDate,
+      rentalDate: rentalDate,
       bookingDate: DateTime.now(),
       totalAmount: totalAmount,
       depositAmount: depositAmount,
@@ -148,7 +148,7 @@ class BookingProvider extends ChangeNotifier {
     _bookings.add(Booking(
       id: id,
       customerId: customerId,
-      eventDate: eventDate,
+      rentalDate: rentalDate,
       bookingDate: booking.bookingDate,
       totalAmount: totalAmount,
       depositAmount: depositAmount,
@@ -174,7 +174,7 @@ class BookingProvider extends ChangeNotifier {
   Future<void> updateBooking({
     required int id,
     required int customerId,
-    required DateTime eventDate,
+    required DateTime rentalDate,
     required DateTime bookingDate,
     required double totalAmount,
     required double depositAmount,
@@ -188,7 +188,7 @@ class BookingProvider extends ChangeNotifier {
     final booking = Booking(
       id: id,
       customerId: customerId,
-      eventDate: eventDate,
+      rentalDate: rentalDate,
       bookingDate: bookingDate,
       totalAmount: totalAmount,
       depositAmount: depositAmount,
@@ -217,7 +217,7 @@ class BookingProvider extends ChangeNotifier {
     final booking = Booking(
       id: id,
       customerId: existing.customerId,
-      eventDate: existing.eventDate,
+      rentalDate: existing.rentalDate,
       bookingDate: existing.bookingDate,
       totalAmount: existing.totalAmount,
       depositAmount: existing.depositAmount,

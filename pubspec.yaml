@@ -90,7 +90,7 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "MrinayaIcon.jpeg"
-  adaptive_icon_background: "#6A1B9A"
+  adaptive_icon_background: "#0D47A1"
   adaptive_icon_foreground: "MrinayaIcon.jpeg"
   remove_alpha_ios: true
 

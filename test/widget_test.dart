@@ -21,7 +21,7 @@ void main() {
   test('booking balance is deposit minus rent minus paid to customer', () {
     final booking = Booking(
       customerId: 1,
-      eventDate: DateTime.now().add(const Duration(days: 3)),
+      rentalDate: DateTime.now().add(const Duration(days: 3)),
       bookingDate: DateTime.now(),
       totalAmount: 5000,
       depositAmount: 20000,

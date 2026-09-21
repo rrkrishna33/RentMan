@@ -247,7 +247,7 @@ class _CustomerDetailsSheet extends StatelessWidget {
                   ),
                   child: ListTile(
                     title: Text('${booking.items.length} items'),
-                    subtitle: Text('Event: ${booking.eventDate.day}/${booking.eventDate.month}'),
+                    subtitle: Text('Rental: ${booking.rentalDate.day}/${booking.rentalDate.month}'),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [

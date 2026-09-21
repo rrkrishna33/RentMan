@@ -129,7 +129,7 @@ class InvoiceService {
                       pw.SizedBox(height: 6),
                       pw.Text('Invoice Date: ${_formatDate(DateTime.now())}'),
                       pw.Text('Booking Date: ${_formatDate(booking.bookingDate)}'),
-                      pw.Text('Event Date: ${_formatDate(booking.eventDate)}'),
+                      pw.Text('Rental Date: ${_formatDate(booking.rentalDate)}'),
                     ],
                   ),
                   pw.Container(

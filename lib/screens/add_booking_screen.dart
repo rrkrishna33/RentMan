@@ -23,7 +23,7 @@ class _AddBookingScreenState extends State<AddBookingScreen> {
   final _formKey = GlobalKey<FormState>();
   
   late int _selectedCustomerId;
-  late DateTime _selectedEventDate;
+  late DateTime _selectedRentalDate;
   late TextEditingController _totalController;
   late TextEditingController _depositController;
   late TextEditingController _paidController;
@@ -36,7 +36,7 @@ class _AddBookingScreenState extends State<AddBookingScreen> {
     super.initState();
     final booking = widget.booking;
     _selectedCustomerId = booking?.customerId ?? widget.customerId ?? 0;
-    _selectedEventDate = booking?.eventDate ?? DateTime.now().add(const Duration(days: 7));
+    _selectedRentalDate = booking?.rentalDate ?? DateTime.now().add(const Duration(days: 7));
     // For editing: extract rent amount (total - deposit), for new bookings: use empty
     final rentAmount = booking != null ? (booking.totalAmount - booking.depositAmount) : 0.0;
     _totalController = TextEditingController(
@@ -95,7 +95,7 @@ class _AddBookingScreenState extends State<AddBookingScreen> {
           await provider.updateBooking(
             id: bookingId,
             customerId: _selectedCustomerId,
-            eventDate: _selectedEventDate,
+            rentalDate: _selectedRentalDate,
             bookingDate: widget.booking!.bookingDate,
             totalAmount: _computedTotalAmount,
             depositAmount: _toMoney(_depositController),
@@ -107,7 +107,7 @@ class _AddBookingScreenState extends State<AddBookingScreen> {
         } else {
           bookingId = await provider.addBooking(
             customerId: _selectedCustomerId,
-            eventDate: _selectedEventDate,
+            rentalDate: _selectedRentalDate,
             totalAmount: _computedTotalAmount,
             depositAmount: _toMoney(_depositController),
             paidAmount: _toMoney(_paidController),
@@ -228,20 +228,20 @@ class _AddBookingScreenState extends State<AddBookingScreen> {
                           ),
                         const SizedBox(height: 18),
 
-                        // Event Date
-                        const _FieldLabel('Event Date', required: true),
+                        // Rental Date
+                        const _FieldLabel('Rental Date', required: true),
                         const SizedBox(height: 8),
                         InkWell(
                           borderRadius: BorderRadius.circular(14),
                           onTap: () async {
                             final date = await showDatePicker(
                               context: context,
-                              initialDate: _selectedEventDate,
+                              initialDate: _selectedRentalDate,
                               firstDate: DateTime.now(),
                               lastDate: DateTime.now().add(const Duration(days: 365)),
                             );
                             if (date != null) {
-                              setState(() => _selectedEventDate = date);
+                              setState(() => _selectedRentalDate = date);
                             }
                           },
                           child: Container(
@@ -256,7 +256,7 @@ class _AddBookingScreenState extends State<AddBookingScreen> {
                                 const Icon(Icons.calendar_today_outlined, color: AppTheme.primary, size: 20),
                                 const SizedBox(width: 12),
                                 Text(
-                                  '${_selectedEventDate.day}/${_selectedEventDate.month}/${_selectedEventDate.year}',
+                                  '${_selectedRentalDate.day}/${_selectedRentalDate.month}/${_selectedRentalDate.year}',
                                   style: const TextStyle(fontWeight: FontWeight.w500),
                                 ),
                               ],

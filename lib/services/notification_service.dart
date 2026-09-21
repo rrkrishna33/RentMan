@@ -83,8 +83,8 @@ class NotificationService {
     );
   }
 
-  // Schedules daily reminders starting `daysBefore` days ahead of the event,
-  // continuing up to the event date until the booking is dispatched.
+  // Schedules daily reminders starting `daysBefore` days ahead of the rental date,
+  // continuing up to the rental date until the booking is dispatched.
   static Future<void> scheduleReminderNotification({
     required Booking booking,
     required String customerName,
@@ -93,8 +93,8 @@ class NotificationService {
     required int minute,
   }) async {
     final now = DateTime.now();
-    final eventDate = booking.eventDate;
-    final daysUntil = eventDate.difference(DateTime(now.year, now.month, now.day)).inDays;
+    final rentalDate = booking.rentalDate;
+    final daysUntil = rentalDate.difference(DateTime(now.year, now.month, now.day)).inDays;
 
     if (daysUntil <= 0 || booking.id == null) return;
 
@@ -116,7 +116,7 @@ class NotificationService {
         await _notificationsPlugin.zonedSchedule(
           _reminderNotificationId(booking.id!, day),
           'Rental Manager Reminder',
-          'Send $customerName dress/jewelry for event on ${eventDate.day}/${eventDate.month}',
+          'Send $customerName rented items for pickup on ${rentalDate.day}/${rentalDate.month}',
           tz.TZDateTime.from(notificationTime, tz.local),
           const NotificationDetails(
             android: AndroidNotificationDetails(
@@ -160,8 +160,8 @@ class NotificationService {
     required int minute,
   }) {
     final now = DateTime.now();
-    final eventDate = booking.eventDate;
-    final daysUntil = eventDate.difference(DateTime(now.year, now.month, now.day)).inDays;
+    final rentalDate = booking.rentalDate;
+    final daysUntil = rentalDate.difference(DateTime(now.year, now.month, now.day)).inDays;
 
     if (daysUntil <= 0 || booking.id == null) return const [];
 

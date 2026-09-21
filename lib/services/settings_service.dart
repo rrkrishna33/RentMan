@@ -16,7 +16,7 @@ class SettingsService extends ChangeNotifier {
   static const _reminderHourKey = 'reminder_hour';
   static const _reminderMinuteKey = 'reminder_minute';
 
-  static const List<String> _defaultCategories = ['dress', 'jewelry', 'accessory'];
+  static const List<String> _defaultCategories = ['Furniture', 'Equipment', 'Electronics', 'Decor', 'Other'];
 
   String companyName = '';
   String companyAddress = '';

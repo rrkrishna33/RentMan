@@ -284,14 +284,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 20),
                     _SectionCard(
                       title: 'Reminders',
-                      subtitle: 'Simple reminder before each event',
+                      subtitle: 'Simple reminder before each rental',
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           SwitchListTile(
                             contentPadding: EdgeInsets.zero,
                             title: const Text('Enable Reminders'),
-                            subtitle: const Text('Get one reminder before the event'),
+                            subtitle: const Text('Get one reminder before the rental date'),
                             value: settings.remindersEnabled,
                             activeColor: AppTheme.primary,
                             onChanged: (value) async {

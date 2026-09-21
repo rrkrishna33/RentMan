@@ -62,7 +62,7 @@ class _DeliveryListScreen extends StatelessWidget {
             final status = provider.getDeliveryForBooking(b.id)?.status ?? 'pending';
             return status == 'pending';
           }).toList()
-            ..sort((a, b) => a.eventDate.compareTo(b.eventDate));
+            ..sort((a, b) => a.rentalDate.compareTo(b.rentalDate));
 
           final updated = provider.updatedDeliveries;
 
@@ -157,7 +157,7 @@ class _BookingTile extends StatelessWidget {
                           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
                       const SizedBox(height: 2),
                       Text(
-                        'Event ${booking.eventDate.day}/${booking.eventDate.month}/${booking.eventDate.year} · ${booking.items.length} items',
+                        'Rental ${booking.rentalDate.day}/${booking.rentalDate.month}/${booking.rentalDate.year} · ${booking.items.length} items',
                         style: TextStyle(color: Colors.grey[600], fontSize: 12.5),
                       ),
                     ],
@@ -605,8 +605,8 @@ class _DeliveryDetailScreenState extends State<_DeliveryDetailScreen> {
             ],
           ),
           const Divider(height: 28),
-          _detailRow(Icons.event_rounded, 'Event Date',
-              '${booking.eventDate.day}/${booking.eventDate.month}/${booking.eventDate.year}'),
+          _detailRow(Icons.event_rounded, 'Rental Date',
+              '${booking.rentalDate.day}/${booking.rentalDate.month}/${booking.rentalDate.year}'),
           const SizedBox(height: 10),
           _detailRow(Icons.currency_rupee_rounded, 'Deposit', booking.depositAmount.toStringAsFixed(0)),
           if (booking.specialNotes != null && booking.specialNotes!.isNotEmpty) ...[

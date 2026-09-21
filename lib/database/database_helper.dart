@@ -6,7 +6,7 @@ import '../models/delivery.dart';
 
 class DatabaseHelper {
   static const String _dbName = 'rental_app.db';
-  static const int _dbVersion = 5;
+  static const int _dbVersion = 6;
 
   static const String customersTable = 'customers';
   static const String bookingsTable = 'bookings';
@@ -41,6 +41,8 @@ class DatabaseHelper {
     await _addColumnIfMissing(db, bookingsTable, 'paidAmount', 'REAL NOT NULL DEFAULT 0');
     await _addColumnIfMissing(db, bookingsTable, 'balancePaid', 'INTEGER NOT NULL DEFAULT 0');
     await _addColumnIfMissing(db, bookingsTable, 'balancePaidDate', 'TEXT');
+    await _renameColumnIfNeeded(db, bookingsTable, 'eventDate', 'rentalDate');
+    await _renameColumnIfNeeded(db, remindersTable, 'eventDate', 'rentalDate');
   }
 
   // Safely add a column only if it doesn't already exist (guards against partial/duplicate migrations).
@@ -49,6 +51,16 @@ class DatabaseHelper {
     final exists = columns.any((c) => c['name'] == column);
     if (!exists) {
       await db.execute('ALTER TABLE $table ADD COLUMN $column $type');
+    }
+  }
+
+  // Renames a column if the old name is present and the new one isn't yet (guards against partial/duplicate migrations).
+  Future<void> _renameColumnIfNeeded(Database db, String table, String oldName, String newName) async {
+    final columns = await db.rawQuery('PRAGMA table_info($table)');
+    final hasOld = columns.any((c) => c['name'] == oldName);
+    final hasNew = columns.any((c) => c['name'] == newName);
+    if (hasOld && !hasNew) {
+      await db.execute('ALTER TABLE $table RENAME COLUMN $oldName TO $newName');
     }
   }
 
@@ -69,7 +81,7 @@ class DatabaseHelper {
       CREATE TABLE $bookingsTable (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         customerId INTEGER NOT NULL,
-        eventDate TEXT NOT NULL,
+        rentalDate TEXT NOT NULL,
         bookingDate TEXT NOT NULL,
         totalAmount REAL NOT NULL DEFAULT 0,
         depositAmount REAL NOT NULL DEFAULT 0,
@@ -118,7 +130,7 @@ class DatabaseHelper {
       CREATE TABLE $remindersTable (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         bookingId INTEGER NOT NULL,
-        eventDate TEXT NOT NULL,
+        rentalDate TEXT NOT NULL,
         lastNotifiedDate TEXT,
         isSent INTEGER NOT NULL DEFAULT 0,
         notificationCount INTEGER NOT NULL DEFAULT 0,
@@ -186,7 +198,7 @@ class DatabaseHelper {
     // Create reminder
     await db.insert(remindersTable, {
       'bookingId': bookingId,
-      'eventDate': booking.eventDate.toIso8601String(),
+      'rentalDate': booking.rentalDate.toIso8601String(),
       'isSent': 0,
       'notificationCount': 0,
     });
@@ -214,7 +226,7 @@ class DatabaseHelper {
     return Booking(
       id: booking.id,
       customerId: booking.customerId,
-      eventDate: booking.eventDate,
+      rentalDate: booking.rentalDate,
       bookingDate: booking.bookingDate,
       totalAmount: booking.totalAmount,
       depositAmount: booking.depositAmount,
@@ -241,7 +253,7 @@ class DatabaseHelper {
       bookings.add(Booking(
         id: booking.id,
         customerId: booking.customerId,
-        eventDate: booking.eventDate,
+        rentalDate: booking.rentalDate,
         bookingDate: booking.bookingDate,
         totalAmount: booking.totalAmount,
         depositAmount: booking.depositAmount,
@@ -338,8 +350,8 @@ class DatabaseHelper {
       SELECT r.* FROM $remindersTable r
       JOIN $bookingsTable b ON r.bookingId = b.id
       WHERE r.isSent = 0
-      AND julianday(r.eventDate) - julianday('now') BETWEEN 0 AND 10
-      ORDER BY r.eventDate ASC
+      AND julianday(r.rentalDate) - julianday('now') BETWEEN 0 AND 10
+      ORDER BY r.rentalDate ASC
     ''');
     
     return result;

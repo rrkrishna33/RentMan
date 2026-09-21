@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 
-/// Centralized modern theme for the Rental Manager app.
+/// Centralized modern theme for the RentMan app.
 class AppTheme {
   AppTheme._();
 
-  static const Color primary = Color(0xFF6C4AB6);
-  static const Color primaryDark = Color(0xFF4B2E9E);
-  static const Color secondary = Color(0xFFEF7FAF);
-  static const Color accent = Color(0xFFFFB86B);
-  static const Color background = Color(0xFFF6F4FB);
+  static const Color primary = Color(0xFF1565C0);
+  static const Color primaryDark = Color(0xFF0D47A1);
+  static const Color secondary = Color(0xFF00897B);
+  static const Color accent = Color(0xFFFFA726);
+  static const Color background = Color(0xFFF5F7FA);
   static const Color surface = Colors.white;
-  static const Color success = Color(0xFF2FBF71);
-  static const Color warning = Color(0xFFFF9F43);
-  static const Color danger = Color(0xFFEF5350);
+  static const Color success = Color(0xFF2E7D32);
+  static const Color warning = Color(0xFFF59E0B);
+  static const Color danger = Color(0xFFE53935);
 
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [primary, secondary],
+    colors: [primaryDark, primary],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -46,29 +46,33 @@ class AppTheme {
         ),
       ),
       cardTheme: CardTheme(
-        elevation: 0,
+        elevation: 1.5,
+        shadowColor: Colors.black.withOpacity(0.08),
         color: surface,
         margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.black.withOpacity(0.05)),
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: background,
+        fillColor: surface,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.black.withOpacity(0.12)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.black.withOpacity(0.12)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: primary, width: 1.6),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: danger, width: 1.2),
         ),
       ),
@@ -77,19 +81,24 @@ class AppTheme {
           backgroundColor: primary,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           elevation: 0,
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: primary,
+        backgroundColor: secondary,
         foregroundColor: Colors.white,
-        elevation: 4,
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
       ),
       chipTheme: base.chipTheme.copyWith(
         backgroundColor: primary.withOpacity(0.08),
         labelStyle: const TextStyle(color: primaryDark, fontWeight: FontWeight.w600),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: BorderSide.none,
+        ),
         side: BorderSide.none,
       ),
       navigationBarTheme: NavigationBarThemeData(
@@ -129,8 +138,8 @@ class GradientHeader extends StatelessWidget {
       decoration: const BoxDecoration(
         gradient: AppTheme.primaryGradient,
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
+          bottomLeft: Radius.circular(16),
+          bottomRight: Radius.circular(16),
         ),
       ),
       child: child,

@@ -1,7 +1,7 @@
 class Booking {
   final int? id;
   final int customerId;
-  final DateTime eventDate;
+  final DateTime rentalDate;
   final DateTime bookingDate;
   final double totalAmount;
   final double depositAmount;
@@ -15,7 +15,7 @@ class Booking {
   Booking({
     this.id,
     required this.customerId,
-    required this.eventDate,
+    required this.rentalDate,
     required this.bookingDate,
     this.totalAmount = 0,
     required this.depositAmount,
@@ -27,11 +27,11 @@ class Booking {
     required this.items,
   });
 
-  // Get days until event
-  int get daysUntilEvent => eventDate.difference(DateTime.now()).inDays;
+  // Get days until rental date
+  int get daysUntilRental => rentalDate.difference(DateTime.now()).inDays;
 
   // Check if reminder should be sent (5-10 days before)
-  bool get shouldRemind => daysUntilEvent > 0 && daysUntilEvent <= 10;
+  bool get shouldRemind => daysUntilRental > 0 && daysUntilRental <= 10;
 
   // Total amount is the sum of rent and deposit, and the remaining due is total minus paid.
   double get balanceAmount => (totalAmount - paidAmount).clamp(0, double.infinity);
@@ -39,7 +39,7 @@ class Booking {
   Map<String, dynamic> toJson() => {
     'id': id,
     'customerId': customerId,
-    'eventDate': eventDate.toIso8601String(),
+    'rentalDate': rentalDate.toIso8601String(),
     'bookingDate': bookingDate.toIso8601String(),
     'totalAmount': totalAmount,
     'depositAmount': depositAmount,
@@ -54,7 +54,7 @@ class Booking {
   factory Booking.fromJson(Map<String, dynamic> json) => Booking(
     id: json['id'],
     customerId: json['customerId'],
-    eventDate: DateTime.parse(json['eventDate']),
+    rentalDate: DateTime.parse(json['rentalDate']),
     bookingDate: DateTime.parse(json['bookingDate']),
     totalAmount: (json['totalAmount'] ?? 0).toDouble(),
     depositAmount: (json['depositAmount'] ?? 0).toDouble(),
@@ -71,7 +71,7 @@ class Booking {
   Map<String, dynamic> toMap() => {
     'id': id,
     'customerId': customerId,
-    'eventDate': eventDate.toIso8601String(),
+    'rentalDate': rentalDate.toIso8601String(),
     'bookingDate': bookingDate.toIso8601String(),
     'totalAmount': totalAmount,
     'depositAmount': depositAmount,
@@ -85,7 +85,7 @@ class Booking {
   factory Booking.fromMap(Map<String, dynamic> map) => Booking(
     id: map['id'],
     customerId: map['customerId'],
-    eventDate: DateTime.parse(map['eventDate']),
+    rentalDate: DateTime.parse(map['rentalDate']),
     bookingDate: DateTime.parse(map['bookingDate']),
     totalAmount: (map['totalAmount'] ?? 0).toDouble(),
     depositAmount: (map['depositAmount'] ?? 0).toDouble(),
@@ -102,7 +102,7 @@ class BookingItem {
   final int? id;
   final int bookingId;
   final String itemName;
-  final String? category; // dress, jewelry, accessory
+  final String? category; // e.g. Furniture, Equipment, Electronics
   final int quantity;
   final String? photoPaths; // comma-separated paths
 

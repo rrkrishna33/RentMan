@@ -88,7 +88,7 @@ class Delivery {
 class Reminder {
   final int? id;
   final int bookingId;
-  final DateTime eventDate;
+  final DateTime rentalDate;
   final DateTime? lastNotifiedDate;
   final bool isSent;
   final int notificationCount;
@@ -96,23 +96,23 @@ class Reminder {
   Reminder({
     this.id,
     required this.bookingId,
-    required this.eventDate,
+    required this.rentalDate,
     this.lastNotifiedDate,
     required this.isSent,
     required this.notificationCount,
   });
 
-  // Check if should send reminder (5-10 days before event)
+  // Check if should send reminder (5-10 days before rental date)
   bool get shouldSendReminder {
     if (isSent) return false;
-    final daysUntil = eventDate.difference(DateTime.now()).inDays;
+    final daysUntil = rentalDate.difference(DateTime.now()).inDays;
     return daysUntil > 0 && daysUntil <= 10;
   }
 
   Map<String, dynamic> toMap() => {
     'id': id,
     'bookingId': bookingId,
-    'eventDate': eventDate.toIso8601String(),
+    'rentalDate': rentalDate.toIso8601String(),
     'lastNotifiedDate': lastNotifiedDate?.toIso8601String(),
     'isSent': isSent ? 1 : 0,
     'notificationCount': notificationCount,
@@ -121,7 +121,7 @@ class Reminder {
   factory Reminder.fromMap(Map<String, dynamic> map) => Reminder(
     id: map['id'],
     bookingId: map['bookingId'],
-    eventDate: DateTime.parse(map['eventDate']),
+    rentalDate: DateTime.parse(map['rentalDate']),
     lastNotifiedDate: map['lastNotifiedDate'] != null ? DateTime.parse(map['lastNotifiedDate']) : null,
     isSent: map['isSent'] == 1,
     notificationCount: map['notificationCount'],
