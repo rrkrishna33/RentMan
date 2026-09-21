@@ -55,7 +55,6 @@ dependencies:
 
   # Notifications
   flutter_local_notifications: ^17.2.3
-  timezone: ^0.9.4
 
   # Google Drive Sync
   google_sign_in: ^6.2.1

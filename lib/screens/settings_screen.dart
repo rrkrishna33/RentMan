@@ -283,44 +283,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 20),
                     _SectionCard(
-                      title: 'Reminders',
-                      subtitle: 'Simple reminder before each rental',
+                      title: 'Pending Order Alerts',
+                      subtitle: 'Repeating alert until an order is dispatched',
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           SwitchListTile(
                             contentPadding: EdgeInsets.zero,
-                            title: const Text('Enable Reminders'),
-                            subtitle: const Text('Get one reminder before the rental date'),
-                            value: settings.remindersEnabled,
+                            title: const Text('Enable Alerts'),
+                            subtitle: const Text('Keep notifying until the order is marked dispatched'),
+                            value: settings.pendingOrderAlertsEnabled,
                             activeColor: AppTheme.primary,
                             onChanged: (value) async {
-                              await context.read<SettingsService>().updateReminderSettings(
+                              await context.read<SettingsService>().updatePendingOrderAlertSettings(
                                     enabled: value,
-                                    daysBefore: settings.reminderDaysBefore,
-                                    hour: settings.reminderHour,
-                                    minute: settings.reminderMinute,
+                                    intervalHours: settings.pendingOrderAlertIntervalHours,
                                   );
                             },
                           ),
-                          if (settings.remindersEnabled) ...[
+                          if (settings.pendingOrderAlertsEnabled) ...[
                             const SizedBox(height: 8),
-                            const Text('Send reminder', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
+                            const Text('Repeat every', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
                             const SizedBox(height: 8),
                             Wrap(
                               spacing: 8,
                               runSpacing: 8,
-                              children: [1, 2, 3, 5, 7].map((days) {
-                                final selected = settings.reminderDaysBefore == days;
+                              children: [1, 2].map((hours) {
+                                final selected = settings.pendingOrderAlertIntervalHours == hours;
                                 return ChoiceChip(
-                                  label: Text('$days day${days > 1 ? 's' : ''} before'),
+                                  label: Text('$hours hour${hours > 1 ? 's' : ''}'),
                                   selected: selected,
                                   onSelected: (_) async {
-                                    await context.read<SettingsService>().updateReminderSettings(
-                                      enabled: settings.remindersEnabled,
-                                      daysBefore: days,
-                                      hour: settings.reminderHour,
-                                      minute: settings.reminderMinute,
+                                    await context.read<SettingsService>().updatePendingOrderAlertSettings(
+                                      enabled: settings.pendingOrderAlertsEnabled,
+                                      intervalHours: hours,
                                     );
                                   },
                                   selectedColor: AppTheme.primary,
@@ -333,33 +329,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 );
                               }).toList(),
                             ),
-                            const SizedBox(height: 12),
-                            ListTile(
-                              contentPadding: EdgeInsets.zero,
-                              leading: const Icon(Icons.access_time_outlined, color: AppTheme.primary),
-                              title: const Text('Reminder Time'),
-                              subtitle: Text(TimeOfDay(hour: settings.reminderHour, minute: settings.reminderMinute)
-                                  .format(context)),
-                              trailing: const Icon(Icons.chevron_right_rounded),
-                              onTap: () async {
-                                final picked = await showTimePicker(
-                                  context: context,
-                                  initialTime: TimeOfDay(hour: settings.reminderHour, minute: settings.reminderMinute),
-                                );
-                                if (picked != null) {
-                                  if (!context.mounted) return;
-                                  await context.read<SettingsService>().updateReminderSettings(
-                                        enabled: settings.remindersEnabled,
-                                        daysBefore: settings.reminderDaysBefore,
-                                        hour: picked.hour,
-                                        minute: picked.minute,
-                                      );
-                                }
-                              },
-                            ),
                             const SizedBox(height: 8),
                             Text(
-                              'Note: reminders are sent only at future scheduled times. If the selected time has already passed today, the first reminder will appear on the next day.',
+                              'Note: a new interval only applies to bookings created or edited after the change. Existing alerts keep their previous interval until dispatched.',
                               style: TextStyle(color: Colors.grey[600], fontSize: 12),
                             ),
                             const SizedBox(height: 12),

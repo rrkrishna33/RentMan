@@ -108,12 +108,12 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Delete a customer along with all of their bookings (and related delivery/reminder records)
+  // Delete a customer along with all of their bookings (and related delivery/alert records)
   Future<void> deleteCustomer(int id) async {
     final customerBookingIds = _bookings.where((b) => b.customerId == id).map((b) => b.id!).toList();
     for (final bookingId in customerBookingIds) {
       await _dbHelper.deleteBooking(bookingId);
-      await NotificationService.cancelReminders(bookingId);
+      await NotificationService.cancelPendingOrderAlert(bookingId);
     }
     await _dbHelper.deleteCustomer(id);
     _bookings.removeWhere((b) => b.customerId == id);
@@ -237,10 +237,10 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Delete a booking (and its related delivery/reminder records)
+  // Delete a booking (and its related delivery/alert records)
   Future<void> deleteBooking(int id) async {
     await _dbHelper.deleteBooking(id);
-    await NotificationService.cancelReminders(id);
+    await NotificationService.cancelPendingOrderAlert(id);
     _bookings.removeWhere((b) => b.id == id);
     _deliveries.removeWhere((d) => d.bookingId == id);
     notifyListeners();
@@ -285,7 +285,8 @@ class BookingProvider extends ChangeNotifier {
     );
 
     if (status == 'dispatched' || status == 'delivered' || status == 'returned') {
-      await NotificationService.cancelReminders(bookingId);
+      // Order is no longer pending, so stop nagging about it.
+      await NotificationService.cancelPendingOrderAlert(bookingId);
     }
 
     _deliveries.removeWhere((d) => d.bookingId == bookingId);

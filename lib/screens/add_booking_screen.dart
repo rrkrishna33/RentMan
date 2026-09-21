@@ -103,7 +103,7 @@ class _AddBookingScreenState extends State<AddBookingScreen> {
             items: _items,
             specialNotes: _notesController.text.isEmpty ? null : _notesController.text,
           );
-          await NotificationService.cancelReminders(bookingId);
+          await NotificationService.cancelPendingOrderAlert(bookingId);
         } else {
           bookingId = await provider.addBooking(
             customerId: _selectedCustomerId,
@@ -116,16 +116,15 @@ class _AddBookingScreenState extends State<AddBookingScreen> {
           );
         }
 
-        if (settings.remindersEnabled) {
+        final deliveryStatus = provider.getDeliveryForBooking(bookingId)?.status ?? 'pending';
+        if (settings.pendingOrderAlertsEnabled && deliveryStatus == 'pending') {
           final customer = provider.getCustomer(_selectedCustomerId);
           final booking = provider.getBooking(bookingId);
           if (customer != null && booking != null) {
-            await NotificationService.scheduleReminderNotification(
+            await NotificationService.schedulePendingOrderAlert(
               booking: booking,
               customerName: customer.name,
-              daysBefore: settings.reminderDaysBefore,
-              hour: settings.reminderHour,
-              minute: settings.reminderMinute,
+              intervalHours: settings.pendingOrderAlertIntervalHours,
             );
           }
         }

@@ -11,10 +11,8 @@ class SettingsService extends ChangeNotifier {
   static const _companyLogoPathKey = 'company_logo_path';
   static const _categoriesKey = 'item_categories';
   static const _appLockEnabledKey = 'app_lock_enabled';
-  static const _remindersEnabledKey = 'reminders_enabled';
-  static const _reminderDaysBeforeKey = 'reminder_days_before';
-  static const _reminderHourKey = 'reminder_hour';
-  static const _reminderMinuteKey = 'reminder_minute';
+  static const _pendingOrderAlertsEnabledKey = 'pending_order_alerts_enabled';
+  static const _pendingOrderAlertIntervalHoursKey = 'pending_order_alert_interval_hours';
 
   static const List<String> _defaultCategories = ['Furniture', 'Equipment', 'Electronics', 'Decor', 'Other'];
 
@@ -26,10 +24,8 @@ class SettingsService extends ChangeNotifier {
   String? companyLogoPath;
   List<String> categories = List.of(_defaultCategories);
   bool appLockEnabled = false;
-  bool remindersEnabled = true;
-  int reminderDaysBefore = 5;
-  int reminderHour = 9;
-  int reminderMinute = 0;
+  bool pendingOrderAlertsEnabled = true;
+  int pendingOrderAlertIntervalHours = 2;
 
   bool _isLoaded = false;
   bool get isLoaded => _isLoaded;
@@ -44,10 +40,8 @@ class SettingsService extends ChangeNotifier {
     companyLogoPath = prefs.getString(_companyLogoPathKey);
     categories = prefs.getStringList(_categoriesKey) ?? List.of(_defaultCategories);
     appLockEnabled = prefs.getBool(_appLockEnabledKey) ?? false;
-    remindersEnabled = prefs.getBool(_remindersEnabledKey) ?? true;
-    reminderDaysBefore = prefs.getInt(_reminderDaysBeforeKey) ?? 5;
-    reminderHour = prefs.getInt(_reminderHourKey) ?? 9;
-    reminderMinute = prefs.getInt(_reminderMinuteKey) ?? 0;
+    pendingOrderAlertsEnabled = prefs.getBool(_pendingOrderAlertsEnabledKey) ?? true;
+    pendingOrderAlertIntervalHours = prefs.getInt(_pendingOrderAlertIntervalHoursKey) ?? 2;
     _isLoaded = true;
     notifyListeners();
   }
@@ -109,21 +103,15 @@ class SettingsService extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateReminderSettings({
+  Future<void> updatePendingOrderAlertSettings({
     required bool enabled,
-    required int daysBefore,
-    required int hour,
-    required int minute,
+    required int intervalHours,
   }) async {
-    remindersEnabled = enabled;
-    reminderDaysBefore = daysBefore;
-    reminderHour = hour;
-    reminderMinute = minute;
+    pendingOrderAlertsEnabled = enabled;
+    pendingOrderAlertIntervalHours = intervalHours;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_remindersEnabledKey, enabled);
-    await prefs.setInt(_reminderDaysBeforeKey, daysBefore);
-    await prefs.setInt(_reminderHourKey, hour);
-    await prefs.setInt(_reminderMinuteKey, minute);
+    await prefs.setBool(_pendingOrderAlertsEnabledKey, enabled);
+    await prefs.setInt(_pendingOrderAlertIntervalHoursKey, intervalHours);
     notifyListeners();
   }
 }
