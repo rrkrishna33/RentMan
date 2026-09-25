@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../gst/eway_bill_json.dart';
+
 /// Manages company profile, item categories and app lock preferences.
 class SettingsService extends ChangeNotifier {
   static const _companyNameKey = 'company_name';
@@ -9,6 +11,10 @@ class SettingsService extends ChangeNotifier {
   static const _companyEmailKey = 'company_email';
   static const _companyGstNumberKey = 'company_gst_number';
   static const _companyLogoPathKey = 'company_logo_path';
+  static const _companyStateCodeKey = 'company_state_code';
+  static const _companyCityKey = 'company_city';
+  static const _companyPincodeKey = 'company_pincode';
+  static const _invoicePrefixKey = 'invoice_prefix';
   static const _categoriesKey = 'item_categories';
   static const _appLockEnabledKey = 'app_lock_enabled';
   static const _pendingOrderAlertsEnabledKey = 'pending_order_alerts_enabled';
@@ -23,6 +29,11 @@ class SettingsService extends ChangeNotifier {
   String companyEmail = '';
   String companyGstNumber = '';
   String? companyLogoPath;
+  // GST billing profile
+  int? companyStateCode;
+  String companyCity = '';
+  String companyPincode = '';
+  String invoicePrefix = 'INV';
   List<String> categories = List.of(_defaultCategories);
   bool appLockEnabled = false;
   bool pendingOrderAlertsEnabled = true;
@@ -42,6 +53,10 @@ class SettingsService extends ChangeNotifier {
     companyEmail = prefs.getString(_companyEmailKey) ?? '';
     companyGstNumber = prefs.getString(_companyGstNumberKey) ?? '';
     companyLogoPath = prefs.getString(_companyLogoPathKey);
+    companyStateCode = prefs.getInt(_companyStateCodeKey);
+    companyCity = prefs.getString(_companyCityKey) ?? '';
+    companyPincode = prefs.getString(_companyPincodeKey) ?? '';
+    invoicePrefix = prefs.getString(_invoicePrefixKey) ?? 'INV';
     categories = prefs.getStringList(_categoriesKey) ?? List.of(_defaultCategories);
     appLockEnabled = prefs.getBool(_appLockEnabledKey) ?? false;
     pendingOrderAlertsEnabled = prefs.getBool(_pendingOrderAlertsEnabledKey) ?? true;
@@ -57,6 +72,10 @@ class SettingsService extends ChangeNotifier {
     required String phone,
     required String email,
     required String gstNumber,
+    int? stateCode,
+    String city = '',
+    String pincode = '',
+    String? invoicePrefix,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     companyName = name;
@@ -69,6 +88,20 @@ class SettingsService extends ChangeNotifier {
     await prefs.setString(_companyPhoneKey, phone);
     await prefs.setString(_companyEmailKey, email);
     await prefs.setString(_companyGstNumberKey, gstNumber);
+    companyStateCode = stateCode;
+    companyCity = city;
+    companyPincode = pincode;
+    if (stateCode == null) {
+      await prefs.remove(_companyStateCodeKey);
+    } else {
+      await prefs.setInt(_companyStateCodeKey, stateCode);
+    }
+    await prefs.setString(_companyCityKey, city);
+    await prefs.setString(_companyPincodeKey, pincode);
+    if (invoicePrefix != null && invoicePrefix.trim().isNotEmpty) {
+      this.invoicePrefix = invoicePrefix.trim().toUpperCase();
+      await prefs.setString(_invoicePrefixKey, this.invoicePrefix);
+    }
     notifyListeners();
   }
 
@@ -122,4 +155,17 @@ class SettingsService extends ChangeNotifier {
     await prefs.setInt(_pendingOrderAlertStartDaysBeforeKey, startDaysBefore);
     notifyListeners();
   }
+
+  /// Seller details used for e-way bill JSON.
+  EwbSeller get ewbSeller => EwbSeller(
+        gstin: companyGstNumber,
+        tradeName: companyName,
+        address: companyAddress,
+        place: companyCity,
+        pincode: companyPincode,
+        stateCode: companyStateCode ?? 0,
+      );
+
+  /// True when enough of the company profile is filled in to issue GST invoices.
+  bool get gstProfileComplete => companyName.isNotEmpty && companyStateCode != null;
 }

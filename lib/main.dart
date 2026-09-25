@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/lock_screen.dart';
+import 'services/billing_provider.dart';
 import 'services/booking_provider.dart';
 import 'services/notification_service.dart';
 import 'services/settings_service.dart';
@@ -24,6 +25,7 @@ class RentManApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => BookingProvider()),
+        ChangeNotifierProvider(create: (_) => BillingProvider()..load()),
         ChangeNotifierProvider(create: (_) => SettingsService()..load()),
       ],
       child: MaterialApp(

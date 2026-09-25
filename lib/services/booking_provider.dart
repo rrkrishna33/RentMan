@@ -56,15 +56,27 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
   }
   
-  // Add customer
-  Future<void> addCustomer(String name, String phone, String? address) async {
+  // Add customer. Returns the new customer's id.
+  Future<int> addCustomer(
+    String name,
+    String phone,
+    String? address, {
+    String? gstin,
+    int? stateCode,
+    String? city,
+    String? pincode,
+  }) async {
     final customer = Customer(
       name: name,
       phone: phone,
       address: address,
       createdDate: DateTime.now(),
+      gstin: gstin,
+      stateCode: stateCode,
+      city: city,
+      pincode: pincode,
     );
-    
+
     final id = await _dbHelper.insertCustomer(customer);
     _customers.add(Customer(
       id: id,
@@ -72,8 +84,13 @@ class BookingProvider extends ChangeNotifier {
       phone: phone,
       address: address,
       createdDate: customer.createdDate,
+      gstin: gstin,
+      stateCode: stateCode,
+      city: city,
+      pincode: pincode,
     ));
     notifyListeners();
+    return id;
   }
   
   // Get customer by ID
@@ -92,6 +109,10 @@ class BookingProvider extends ChangeNotifier {
     required String phone,
     String? address,
     required DateTime createdDate,
+    String? gstin,
+    int? stateCode,
+    String? city,
+    String? pincode,
   }) async {
     final customer = Customer(
       id: id,
@@ -99,6 +120,10 @@ class BookingProvider extends ChangeNotifier {
       phone: phone,
       address: address,
       createdDate: createdDate,
+      gstin: gstin,
+      stateCode: stateCode,
+      city: city,
+      pincode: pincode,
     );
 
     await _dbHelper.updateCustomer(customer);

@@ -5,9 +5,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import '../gst/gst_master.dart';
 import '../services/booking_provider.dart';
 import '../services/settings_service.dart';
 import '../theme/app_theme.dart';
+import 'billing/billing_widgets.dart' show GstStateDropdown;
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -23,6 +25,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late final TextEditingController _phoneController;
   late final TextEditingController _emailController;
   late final TextEditingController _gstController;
+  late final TextEditingController _cityController;
+  late final TextEditingController _pincodeController;
+  late final TextEditingController _invoicePrefixController;
+  int? _stateCode;
   final _categoryController = TextEditingController();
 
   @override
@@ -34,6 +40,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _phoneController = TextEditingController(text: settings.companyPhone);
     _emailController = TextEditingController(text: settings.companyEmail);
     _gstController = TextEditingController(text: settings.companyGstNumber);
+    _cityController = TextEditingController(text: settings.companyCity);
+    _pincodeController = TextEditingController(text: settings.companyPincode);
+    _invoicePrefixController = TextEditingController(text: settings.invoicePrefix);
+    _stateCode = settings.companyStateCode;
   }
 
   @override
@@ -43,6 +53,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _phoneController.dispose();
     _emailController.dispose();
     _gstController.dispose();
+    _cityController.dispose();
+    _pincodeController.dispose();
+    _invoicePrefixController.dispose();
     _categoryController.dispose();
     super.dispose();
   }
@@ -63,12 +76,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _saveCompanyProfile() async {
+    if (!_companyFormKey.currentState!.validate()) return;
+    final gstin = GstMaster.normalizeGstin(_gstController.text);
+    _gstController.text = gstin;
     await context.read<SettingsService>().updateCompanyProfile(
           name: _nameController.text,
           address: _addressController.text,
           phone: _phoneController.text,
           email: _emailController.text,
-          gstNumber: _gstController.text,
+          gstNumber: gstin,
+          stateCode: _stateCode,
+          city: _cityController.text.trim(),
+          pincode: _pincodeController.text.trim(),
+          invoicePrefix: _invoicePrefixController.text,
         );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -189,9 +209,72 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             const SizedBox(height: 12),
                             TextFormField(
                               controller: _gstController,
+                              textCapitalization: TextCapitalization.characters,
                               decoration: const InputDecoration(
-                                hintText: 'GST Number',
+                                hintText: 'GSTIN (15 characters)',
                                 prefixIcon: Icon(Icons.receipt_long_outlined),
+                              ),
+                              onChanged: (value) {
+                                final state = GstMaster.stateCodeFromGstin(value);
+                                if (value.trim().length >= 2 && GstMaster.stateByCode(state) != null && state != _stateCode) {
+                                  setState(() => _stateCode = state);
+                                }
+                              },
+                              validator: (value) {
+                                if ((value ?? '').trim().isEmpty) return null;
+                                return GstMaster.validateGstin(value!);
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            GstStateDropdown(
+                              value: _stateCode,
+                              hint: 'State (for GST)',
+                              onChanged: (value) => setState(() => _stateCode = value),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _cityController,
+                                    textCapitalization: TextCapitalization.words,
+                                    decoration: const InputDecoration(
+                                      hintText: 'City / Place',
+                                      prefixIcon: Icon(Icons.location_city_outlined),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _pincodeController,
+                                    keyboardType: TextInputType.number,
+                                    maxLength: 6,
+                                    decoration: const InputDecoration(
+                                      hintText: 'PIN code',
+                                      counterText: '',
+                                      prefixIcon: Icon(Icons.pin_drop_outlined),
+                                    ),
+                                    validator: (value) {
+                                      final v = (value ?? '').trim();
+                                      if (v.isEmpty) return null;
+                                      return RegExp(r'^[1-9][0-9]{5}$').hasMatch(v) ? null : '6 digits';
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            TextFormField(
+                              controller: _invoicePrefixController,
+                              textCapitalization: TextCapitalization.characters,
+                              maxLength: 5,
+                              decoration: const InputDecoration(
+                                hintText: 'Invoice prefix (e.g. INV)',
+                                helperText: 'GST invoices are numbered PREFIX/YY-YY/0001 per financial year',
+                                counterText: '',
+                                prefixIcon: Icon(Icons.tag),
                               ),
                             ),
                             const SizedBox(height: 16),
