@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
+import '../services/billing_provider.dart';
 import '../services/booking_provider.dart';
 import '../services/drive_sync_service.dart';
 import '../theme/app_theme.dart';
@@ -118,7 +119,9 @@ class _BackupSyncScreenState extends State<BackupSyncScreen> {
     try {
       await _driveSync.restore();
       if (!mounted) return;
+      final billing = context.read<BillingProvider>();
       await context.read<BookingProvider>().loadAllData();
+      await billing.load();
       final lastSync = await _driveSync.getLastLocalSyncTime();
       setState(() => _lastLocalSync = lastSync);
       if (!mounted) return;

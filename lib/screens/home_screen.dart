@@ -6,6 +6,8 @@ import '../theme/app_theme.dart';
 import '../utils/delivery_style.dart';
 import 'add_booking_screen.dart';
 import 'add_customer_screen.dart';
+import 'billing/billing_tab.dart';
+import 'billing/create_invoice_screen.dart';
 import 'backup_sync_screen.dart';
 import 'booking_details_sheet.dart';
 import 'customer_list_screen.dart';
@@ -36,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  static const _titles = ['Dashboard', 'Customers', 'Delivery Tracking'];
+  static const _titles = ['Dashboard', 'Customers', 'Delivery Tracking', 'GST Billing'];
 
   @override
   Widget build(BuildContext context) {
@@ -122,6 +124,11 @@ class _HomeScreenState extends State<HomeScreen> {
             selectedIcon: Icon(Icons.local_shipping_rounded),
             label: 'Delivery',
           ),
+          NavigationDestination(
+            icon: Icon(Icons.receipt_long_outlined),
+            selectedIcon: Icon(Icons.receipt_long_rounded),
+            label: 'Billing',
+          ),
         ],
       ),
       floatingActionButton: _selectedIndex == 2
@@ -131,14 +138,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => _selectedIndex == 1
-                        ? const AddCustomerScreen()
-                        : const AddBookingScreen(),
+                    builder: (_) => switch (_selectedIndex) {
+                      1 => const AddCustomerScreen(),
+                      3 => const CreateInvoiceScreen(),
+                      _ => const AddBookingScreen(),
+                    },
                   ),
                 );
               },
               icon: const Icon(Icons.add),
-              label: Text(_selectedIndex == 1 ? 'Add Customer' : 'Add Booking'),
+              label: Text(switch (_selectedIndex) {
+                1 => 'Add Customer',
+                3 => 'New Invoice',
+                _ => 'Add Booking',
+              }),
             ),
     );
   }
@@ -151,6 +164,8 @@ class _HomeScreenState extends State<HomeScreen> {
         return const CustomerListScreen();
       case 2:
         return const DeliveryTrackingScreen();
+      case 3:
+        return const BillingTab();
       default:
         return const DashboardTab();
     }

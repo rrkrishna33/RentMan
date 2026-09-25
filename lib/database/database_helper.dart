@@ -3,16 +3,21 @@ import 'package:path/path.dart';
 import '../models/customer.dart';
 import '../models/booking.dart';
 import '../models/delivery.dart';
+import '../models/product.dart';
+import '../models/sales_invoice.dart';
 
 class DatabaseHelper {
   static const String _dbName = 'rental_app.db';
-  static const int _dbVersion = 6;
+  static const int _dbVersion = 7;
 
   static const String customersTable = 'customers';
   static const String bookingsTable = 'bookings';
   static const String bookingItemsTable = 'booking_items';
   static const String deliveriesTable = 'deliveries';
   static const String remindersTable = 'reminders';
+  static const String productsTable = 'products';
+  static const String salesInvoicesTable = 'sales_invoices';
+  static const String salesInvoiceItemsTable = 'sales_invoice_items';
 
   static Database? _database;
 
@@ -43,6 +48,73 @@ class DatabaseHelper {
     await _addColumnIfMissing(db, bookingsTable, 'balancePaidDate', 'TEXT');
     await _renameColumnIfNeeded(db, bookingsTable, 'eventDate', 'rentalDate');
     await _renameColumnIfNeeded(db, remindersTable, 'eventDate', 'rentalDate');
+    // v7: GST billing
+    await _addColumnIfMissing(db, customersTable, 'gstin', 'TEXT');
+    await _addColumnIfMissing(db, customersTable, 'stateCode', 'INTEGER');
+    await _addColumnIfMissing(db, customersTable, 'city', 'TEXT');
+    await _addColumnIfMissing(db, customersTable, 'pincode', 'TEXT');
+    await _createBillingTables(db);
+  }
+
+  // GST billing tables. Uses IF NOT EXISTS so it is safe from both onCreate and onUpgrade.
+  Future<void> _createBillingTables(DatabaseExecutor db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS $productsTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        hsnCode TEXT NOT NULL,
+        unit TEXT NOT NULL DEFAULT 'NOS',
+        price REAL NOT NULL DEFAULT 0,
+        gstRate REAL NOT NULL DEFAULT 0,
+        priceIncludesTax INTEGER NOT NULL DEFAULT 0,
+        lastUpdated TEXT NOT NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS $salesInvoicesTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        invoiceNo TEXT NOT NULL UNIQUE,
+        invoiceDate TEXT NOT NULL,
+        customerId INTEGER,
+        buyerName TEXT NOT NULL,
+        buyerGstin TEXT,
+        buyerPhone TEXT,
+        buyerAddress TEXT,
+        buyerPlace TEXT,
+        buyerPincode TEXT,
+        placeOfSupplyStateCode INTEGER NOT NULL,
+        sellerStateCode INTEGER NOT NULL,
+        paidAmount REAL NOT NULL DEFAULT 0,
+        notes TEXT,
+        transMode INTEGER NOT NULL DEFAULT 1,
+        transDistance INTEGER NOT NULL DEFAULT 0,
+        transporterId TEXT,
+        transporterName TEXT,
+        vehicleNo TEXT,
+        transDocNo TEXT,
+        transDocDate TEXT,
+        ewbNo TEXT,
+        ewbDate TEXT,
+        ewbValidUpto TEXT,
+        lastUpdated TEXT NOT NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS $salesInvoiceItemsTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        invoiceId INTEGER NOT NULL,
+        productId INTEGER,
+        name TEXT NOT NULL,
+        hsnCode TEXT NOT NULL,
+        unit TEXT NOT NULL DEFAULT 'NOS',
+        quantity REAL NOT NULL,
+        rate REAL NOT NULL,
+        discountPercent REAL NOT NULL DEFAULT 0,
+        gstRate REAL NOT NULL DEFAULT 0,
+        priceIncludesTax INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (invoiceId) REFERENCES $salesInvoicesTable (id)
+      )
+    ''');
   }
 
   // Safely add a column only if it doesn't already exist (guards against partial/duplicate migrations).
@@ -72,7 +144,11 @@ class DatabaseHelper {
         name TEXT NOT NULL,
         phone TEXT NOT NULL,
         address TEXT,
-        createdDate TEXT NOT NULL
+        createdDate TEXT NOT NULL,
+        gstin TEXT,
+        stateCode INTEGER,
+        city TEXT,
+        pincode TEXT
       )
     ''');
 
@@ -137,6 +213,8 @@ class DatabaseHelper {
         FOREIGN KEY (bookingId) REFERENCES $bookingsTable (id)
       )
     ''');
+
+    await _createBillingTables(db);
   }
 
   // ==================== CUSTOMER OPERATIONS ====================
@@ -371,6 +449,92 @@ class DatabaseHelper {
     );
   }
 
+  // ==================== PRODUCT OPERATIONS ====================
+
+  Future<List<Product>> getAllProducts() async {
+    final db = await database;
+    final result = await db.query(productsTable, orderBy: 'name COLLATE NOCASE');
+    return result.map(Product.fromMap).toList();
+  }
+
+  Future<int> insertProduct(Product product) async {
+    final db = await database;
+    return db.insert(productsTable, product.toMap()..remove('id'));
+  }
+
+  Future<void> updateProduct(Product product) async {
+    final db = await database;
+    await db.update(productsTable, product.toMap(), where: 'id = ?', whereArgs: [product.id]);
+  }
+
+  Future<void> deleteProduct(int id) async {
+    final db = await database;
+    await db.delete(productsTable, where: 'id = ?', whereArgs: [id]);
+  }
+
+  // ==================== SALES INVOICE OPERATIONS ====================
+
+  Future<List<SalesInvoice>> getAllSalesInvoices() async {
+    final db = await database;
+    final rows = await db.query(salesInvoicesTable, orderBy: 'invoiceDate DESC, id DESC');
+    final itemRows = await db.query(salesInvoiceItemsTable, orderBy: 'id');
+    final itemsByInvoice = <int, List<SalesInvoiceItem>>{};
+    for (final row in itemRows) {
+      final item = SalesInvoiceItem.fromMap(row);
+      itemsByInvoice.putIfAbsent(item.invoiceId, () => []).add(item);
+    }
+    return rows
+        .map((row) => SalesInvoice.fromMap(row, items: itemsByInvoice[row['id']] ?? const []))
+        .toList();
+  }
+
+  Future<bool> invoiceNoExists(String invoiceNo, {int? excludingId}) async {
+    final db = await database;
+    final result = await db.query(
+      salesInvoicesTable,
+      columns: ['id'],
+      where: excludingId == null ? 'invoiceNo = ?' : 'invoiceNo = ? AND id != ?',
+      whereArgs: excludingId == null ? [invoiceNo] : [invoiceNo, excludingId],
+    );
+    return result.isNotEmpty;
+  }
+
+  /// Inserts or replaces an invoice and all its items in one transaction. Returns the invoice id.
+  Future<int> saveSalesInvoice(SalesInvoice invoice) async {
+    final db = await database;
+    return db.transaction((txn) async {
+      int id;
+      if (invoice.id == null) {
+        id = await txn.insert(salesInvoicesTable, invoice.toMap()..remove('id'));
+      } else {
+        id = invoice.id!;
+        await txn.update(salesInvoicesTable, invoice.toMap(), where: 'id = ?', whereArgs: [id]);
+        await txn.delete(salesInvoiceItemsTable, where: 'invoiceId = ?', whereArgs: [id]);
+      }
+      for (final item in invoice.items) {
+        await txn.insert(salesInvoiceItemsTable, {
+          ...item.toMap()..remove('id'),
+          'invoiceId': id,
+        });
+      }
+      return id;
+    });
+  }
+
+  /// Updates only the invoice header row (payment, transport, e-way bill fields).
+  Future<void> updateSalesInvoiceHeader(SalesInvoice invoice) async {
+    final db = await database;
+    await db.update(salesInvoicesTable, invoice.toMap(), where: 'id = ?', whereArgs: [invoice.id]);
+  }
+
+  Future<void> deleteSalesInvoice(int id) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.delete(salesInvoiceItemsTable, where: 'invoiceId = ?', whereArgs: [id]);
+      await txn.delete(salesInvoicesTable, where: 'id = ?', whereArgs: [id]);
+    });
+  }
+
   // ==================== SYNC OPERATIONS ====================
 
   Future<Map<String, dynamic>> getAllDataForSync() async {
@@ -382,11 +546,17 @@ class DatabaseHelper {
       'bookingItems': await db.query(bookingItemsTable),
       'deliveries': await db.query(deliveriesTable),
       'reminders': await db.query(remindersTable),
+      'products': await db.query(productsTable),
+      'salesInvoices': await db.query(salesInvoicesTable),
+      'salesInvoiceItems': await db.query(salesInvoiceItemsTable),
     };
   }
 
   Future<void> clearAllData() async {
     final db = await database;
+    await db.delete(salesInvoiceItemsTable);
+    await db.delete(salesInvoicesTable);
+    await db.delete(productsTable);
     await db.delete(remindersTable);
     await db.delete(deliveriesTable);
     await db.delete(bookingItemsTable);
@@ -398,6 +568,9 @@ class DatabaseHelper {
   Future<void> restoreFromBackup(Map<String, dynamic> data) async {
     final db = await database;
     await db.transaction((txn) async {
+      await txn.delete(salesInvoiceItemsTable);
+      await txn.delete(salesInvoicesTable);
+      await txn.delete(productsTable);
       await txn.delete(remindersTable);
       await txn.delete(deliveriesTable);
       await txn.delete(bookingItemsTable);
@@ -422,6 +595,19 @@ class DatabaseHelper {
       }
       for (final row in (data['reminders'] as List? ?? [])) {
         await txn.insert(remindersTable, Map<String, dynamic>.from(row),
+            conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      // Older backups (before GST billing) simply have no rows for these.
+      for (final row in (data['products'] as List? ?? [])) {
+        await txn.insert(productsTable, Map<String, dynamic>.from(row),
+            conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      for (final row in (data['salesInvoices'] as List? ?? [])) {
+        await txn.insert(salesInvoicesTable, Map<String, dynamic>.from(row),
+            conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      for (final row in (data['salesInvoiceItems'] as List? ?? [])) {
+        await txn.insert(salesInvoiceItemsTable, Map<String, dynamic>.from(row),
             conflictAlgorithm: ConflictAlgorithm.replace);
       }
     });

@@ -3,7 +3,9 @@ import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:provider/provider.dart';
 import '../services/booking_provider.dart';
 import '../models/customer.dart';
+import '../gst/gst_master.dart';
 import '../theme/app_theme.dart';
+import 'billing/billing_widgets.dart' show GstStateDropdown;
 
 class AddCustomerScreen extends StatefulWidget {
   final Customer? customer;
@@ -21,6 +23,10 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
   late final _nameController = TextEditingController(text: widget.customer?.name);
   late final _phoneController = TextEditingController(text: widget.customer?.phone);
   late final _addressController = TextEditingController(text: widget.customer?.address);
+  late final _gstinController = TextEditingController(text: widget.customer?.gstin);
+  late final _cityController = TextEditingController(text: widget.customer?.city);
+  late final _pincodeController = TextEditingController(text: widget.customer?.pincode);
+  late int? _stateCode = widget.customer?.stateCode;
   bool _isPickingContact = false;
 
   @override
@@ -28,12 +34,17 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
     _nameController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
+    _gstinController.dispose();
+    _cityController.dispose();
+    _pincodeController.dispose();
     super.dispose();
   }
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
       final provider = context.read<BookingProvider>();
+      String? orNull(TextEditingController c) => c.text.trim().isEmpty ? null : c.text.trim();
+      final gstin = orNull(_gstinController) == null ? null : GstMaster.normalizeGstin(_gstinController.text);
       if (widget.isEditing) {
         await provider.updateCustomer(
           id: widget.customer!.id!,
@@ -41,12 +52,20 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
           phone: _phoneController.text,
           address: _addressController.text.isEmpty ? null : _addressController.text,
           createdDate: widget.customer!.createdDate,
+          gstin: gstin,
+          stateCode: _stateCode,
+          city: orNull(_cityController),
+          pincode: orNull(_pincodeController),
         );
       } else {
         await provider.addCustomer(
           _nameController.text,
           _phoneController.text,
           _addressController.text.isEmpty ? null : _addressController.text,
+          gstin: gstin,
+          stateCode: _stateCode,
+          city: orNull(_cityController),
+          pincode: orNull(_pincodeController),
         );
       }
 
@@ -194,6 +213,62 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                         hintText: 'Address (optional)',
                         prefixIcon: Icon(Icons.location_on_outlined),
                       ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    const Text('GST Details (for tax invoices)',
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    const _FieldLabel('GSTIN'),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _gstinController,
+                      textCapitalization: TextCapitalization.characters,
+                      decoration: const InputDecoration(
+                        hintText: 'Leave empty if unregistered',
+                        prefixIcon: Icon(Icons.receipt_long_outlined),
+                      ),
+                      onChanged: (value) {
+                        final state = GstMaster.stateCodeFromGstin(value);
+                        if (value.trim().length >= 2 && GstMaster.stateByCode(state) != null && state != _stateCode) {
+                          setState(() => _stateCode = state);
+                        }
+                      },
+                      validator: (value) {
+                        if ((value ?? '').trim().isEmpty) return null;
+                        return GstMaster.validateGstin(value!);
+                      },
+                    ),
+                    const SizedBox(height: 18),
+                    const _FieldLabel('State'),
+                    const SizedBox(height: 8),
+                    GstStateDropdown(value: _stateCode, onChanged: (v) => setState(() => _stateCode = v)),
+                    const SizedBox(height: 18),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _cityController,
+                            textCapitalization: TextCapitalization.words,
+                            decoration: const InputDecoration(hintText: 'City / Place'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _pincodeController,
+                            keyboardType: TextInputType.number,
+                            maxLength: 6,
+                            decoration: const InputDecoration(hintText: 'PIN code', counterText: ''),
+                            validator: (value) {
+                              final v = (value ?? '').trim();
+                              if (v.isEmpty) return null;
+                              return RegExp(r'^[1-9][0-9]{5}$').hasMatch(v) ? null : '6 digits';
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 28),
 
